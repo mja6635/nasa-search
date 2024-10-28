@@ -1,11 +1,12 @@
 import { LitElement, html, css } from 'lit';
 import "./nasa-image.js";
+
 export class NasaSearch extends LitElement {
   static get properties() {
     return {
       title: { type: String },
       loading: { type: Boolean, reflect: true },
-      items: { type: Array, },
+      items: { type: Array },
       value: { type: String },
     };
   }
@@ -66,10 +67,12 @@ export class NasaSearch extends LitElement {
     </details>
     <div class="results">
       ${this.items.map((item, index) => html`
-      <nasa-image
-        source="${item.links[0].href}"
-        title="${item.data[0].title}"
-      ></nasa-image>
+        <nasa-image
+          source="${item.links[0].href}"
+          title="${item.data[0].title}"
+          alt="${item.data[0].description || 'NASA Image'}"
+          owner="${item.data[0].secondary_creator || 'Unknown'}"
+        ></nasa-image>
       `)}
     </div>
     `;
@@ -78,16 +81,14 @@ export class NasaSearch extends LitElement {
   inputChanged(e) {
     this.value = this.shadowRoot.querySelector('#input').value;
   }
-  // life cycle will run when anything defined in `properties` is modified
+
   updated(changedProperties) {
-    // see if value changes from user input and is not empty
     if (changedProperties.has('value') && this.value) {
       this.updateResults(this.value);
     }
     else if (changedProperties.has('value') && !this.value) {
       this.items = [];
     }
-    // @debugging purposes only
     if (changedProperties.has('items') && this.items.length > 0) {
       console.log(this.items);
     }
@@ -95,13 +96,15 @@ export class NasaSearch extends LitElement {
 
   updateResults(value) {
     this.loading = true;
-    fetch(`https://images-api.nasa.gov/search?media_type=image&q=${value}`).then(d => d.ok ? d.json(): {}).then(data => {
-      if (data.collection) {
-        this.items = [];
-        this.items = data.collection.items;
-        this.loading = false;
-      }  
-    });
+    fetch(`https://images-api.nasa.gov/search?media_type=image&q=${value}`)
+      .then(d => d.ok ? d.json() : {})
+      .then(data => {
+        if (data.collection) {
+          this.items = [];
+          this.items = data.collection.items;
+          this.loading = false;
+        }  
+      });
   }
 
   static get tag() {
